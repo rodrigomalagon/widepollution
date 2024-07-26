@@ -1,12 +1,13 @@
 Package: widepollution
-Title: What the Package Does (One Line, Title Case)
+Title: Process spatiotemporal data from wide-format
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Rodrigo", "Malagón", , "rodrigo.malagon.rodriguez@gmail.com", role = c("aut", "cre"))
+Description: This package provides with basic functionalities to easily rename dataframe columns, to transform wide-format coupled time series into a suitable long-format, and to extract geometries from a certain json file structure. This package was designed as a wrap package to give support to a Data Science workflow analysing pollution patterns in Madrid. Therefore, it is tight to the data structure of a dataset from Madrid Open Data portal. The package provides a complete vignette showcasing the mentioned analysis.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
+Imports: 
+    sf,
+    tidyr
