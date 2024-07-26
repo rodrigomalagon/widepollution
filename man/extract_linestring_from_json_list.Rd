@@ -2,7 +2,7 @@
 % Please edit documentation in R/extract_linestring_from_json.R
 \name{extract_linestring_from_json_list}
 \alias{extract_linestring_from_json_list}
-\title{Extract linestring geometry from list with a json structure}
+\title{Extract linestring geometry from a list with a json-like structure}
 \usage{
 extract_linestring_from_json_list(feature_iterator, json_list)
 }
@@ -15,7 +15,7 @@ extract_linestring_from_json_list(feature_iterator, json_list)
 An sf linestring object
 }
 \description{
-Extract linestring geometry from list with a json structure
+Extract linestring geometry from a list with a json-like structure
 }
 \examples{
 

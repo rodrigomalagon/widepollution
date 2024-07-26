@@ -1,4 +1,4 @@
-#' Extract linestring geometry from list with a json structure
+#' Extract linestring geometry from a list with a json-like structure
 #'
 #' @param feature_iterator An integer indexing the feature element to extract
 #' @param json_list A list with json structure containing linestring coordinates
