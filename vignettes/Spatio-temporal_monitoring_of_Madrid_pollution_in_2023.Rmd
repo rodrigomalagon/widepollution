@@ -120,7 +120,6 @@ pollutants <- pollutants[c('pollutant_id','pollutant_name','unit')]
 
 pollutants$unit <- gsub('m3','m^3',pollutants$unit) 
 
-#Encoding in UFt non-ASCII characters
 pollutants$unit|>enc2utf8()-> pollutants$unit #Ensuring utf-8
 
 year_data <- merge(year_data,pollutants,by='pollutant_id')
@@ -201,8 +200,10 @@ stations <- rename_columns(stations,
                            c('station_id','station_name','long','lat'))
 stations <- stations[c('station_id','station_name','long','lat')]
 
-stations$station_name|>enc2utf8() -> stations$station_name #Ensuring utf-8
+#Ensuring ASCII characters for names
+stations$station_name|>iconv(,to='ASCII//TRANSLIT') -> stations$station_name
 
+#Set georeference
 stations_crs <- st_crs("WGS84" )
 stations <- st_as_sf(stations,coords=c('long','lat'),crs=stations_crs)
 stations
@@ -245,7 +246,7 @@ neighborhoods <- st_as_sf(neighborhoods,crs = neighborhoods_crs)|>
 
 #Incorporation of metadata and selection of meaningful columns
 neigh_metadata <- system.file('extdata/neighborhoods_metadata.csv',package='widepollution')|> read.csv(sep = ',',fileEncoding = "UTF-8")
-neigh_metadata$NOMBRE|>enc2utf8() -> neigh_metadata$NOMBRE #Ensuring utf-8
+neigh_metadata$NOMBRE|>iconv(,to='ASCII//TRANSLIT') -> neigh_metadata$NOMBRE #Ensuring ASCII characters
 
 neighborhoods <- merge(neighborhoods,neigh_metadata,by = 'FID')
 neighborhoods <- rename_columns(neighborhoods,c('NOMBRE','NOMDIS'),c('name','district'))
