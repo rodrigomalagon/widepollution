@@ -39,7 +39,14 @@ The current vignette showcases the employment of processing functions from our p
 
 # II. Data processing
 
-In this section we construct our main processed data sources out of data retrieved from [Madrid Open Data portal](https://datos.madrid.es/portal/site/egob). Our source datasets consists of a **wide-format** monthly tables with hours on columns and measuring stations by type of pollutant by day on rows. We store all raw retrieved files for this project as **external data**. We stress that a `check` command on this package will therefore give a **NOTE on extdata folder size bigger than 1MB**. However, as we want to showcase the complete process followed through this project, we include the processing of these bigger raw files in our package. The data selection and customization made for the analysis and discussion subsections is done later on (in *Data inspection* section).
+In this section we construct our main processed data sources out of data retrieved from [Madrid Open Data portal](https://datos.madrid.es/portal/site/egob). Our source datasets consists of a **wide-format** monthly tables with hours on columns and measuring stations by type of pollutant by day on rows. We store all raw retrieved files for this project as **external data**. 
+
+## II.0 Comments on `NOTE` arising in `R CMD check`
+We are aware that a `R CMD check` command on this package will give:
+
+1. A **NOTE on extdata folder size bigger than 1MB**. However, as we want to showcase the complete process followed through this project, we include the processing of these bigger raw files in our package. The data selection and customization made for the analysis and discussion subsections is done later on (in *Data inspection* section).
+
+2. A **NOTE on presence of UTF-8 encoded characters**. We deliberately intend to include some non-ASCII characters in the names of places around Madrid, in respect of the data source original language. As this is project is intended as a mock project that could be aimed at an organization, we find it valuable to maintain this support. Furthermore, we make sure the encoding is correctly done through the processing by using `enc2utf8()`.
 
 ## II.1 Madrid pollution data processing
 
@@ -69,7 +76,7 @@ monthly_data <- list()
 
 for (month in 1:12){
   month_path <- files$path[month]
-  df <- read.csv(month_path,sep=';')
+  df <- read.csv(month_path,sep=';',fileEncoding = "UTF-8")
   monthly_data[[month]] <- parallel_unpivot(df,
                                             'H',
                                             'V',
@@ -83,6 +90,8 @@ year_data <-  do.call('rbind',monthly_data)
 
 #Change data type of extracted hour column
 year_data$hour <- as.integer(year_data$hour)
+
+year_data$measure <- as.numeric(year_data$measure)
 
 #Rename and extract columns of interest
 year_data  <- rename_columns(year_data,
@@ -102,21 +111,20 @@ head(year_data)
 We incorporate the name of the pollutants from a metadata file containing descriptive information about them.
 
 ```{r}
-pollutants <- system.file('extdata/pollutants.csv',package = 'widepollution')|> read.csv(sep=',',fileEncoding = "UTF-8")
+pollutants <- system.file('extdata/pollutants.csv',package = 'widepollution')|> read.csv(sep=',')
 pollutants <- rename_columns(pollutants,
                              c('Cod.','Abrevia.','Unidad'),
                              c('pollutant_id','pollutant_name','unit')
                              )
 pollutants <- pollutants[c('pollutant_id','pollutant_name','unit')]
-pollutants$unit|>Encoding()
+
+pollutants$unit <- gsub('m3','m^3',pollutants$unit) 
 
 #Encoding in UFt non-ASCII characters
 pollutants$unit|>enc2utf8()-> pollutants$unit #Ensuring utf-8
 
 year_data <- merge(year_data,pollutants,by='pollutant_id')
 head(year_data)
-
-
 ```
 
 ### Dataset inspection
@@ -185,7 +193,7 @@ We continue by loading the stations data and locations (point geometries), defin
 ```{r}
 #Read stations csv
 file_path <- system.file('extdata/stations.csv',package = 'widepollution')
-stations <- read.csv(file_path,sep=';')
+stations <- read.csv(file_path,sep=';',fileEncoding = "UTF-8")
 
 #Translate and align column names
 stations <- rename_columns(stations,
@@ -236,7 +244,7 @@ neighborhoods <- st_as_sf(neighborhoods,crs = neighborhoods_crs)|>
   st_transform(,crs=stations_crs)
 
 #Incorporation of metadata and selection of meaningful columns
-neigh_metadata <- system.file('extdata/neighborhoods_metadata.csv',package='widepollution')|> read.csv(sep = ',')
+neigh_metadata <- system.file('extdata/neighborhoods_metadata.csv',package='widepollution')|> read.csv(sep = ',',fileEncoding = "UTF-8")
 neigh_metadata$NOMBRE|>enc2utf8() -> neigh_metadata$NOMBRE #Ensuring utf-8
 
 neighborhoods <- merge(neighborhoods,neigh_metadata,by = 'FID')
@@ -345,7 +353,7 @@ most_polluted$name
 
 ```{r}
 #Plot the most polluted neighborhoods with greater mean concentration of NOx through 2023
-neighborhoods$geometry|>sf::st_transform(crs=neighborhoods_crs)|>
+neighborhoods$geometry|>st_transform(crs=neighborhoods_crs)|>
   plot(border=0,col='lightblue',graticule=TRUE,axes=TRUE)
 most_polluted$geometry |>
   plot(col='red',add=TRUE)
@@ -378,7 +386,7 @@ nox_mad_hour_cube <- do.call(c,l)|>merge(name = "hour") |> setNames("NOx concent
 nox_mad_hour_cube
 ```
 
-###Neighborhoods discussion
+### Neighborhoods discussion
 
 Similar to the previous case, we obtain the hour-of-the-day `NOx` concentration figure by neighborhood for further discussion.
 
@@ -426,7 +434,7 @@ most_polluted_hour <- most_polluted_hour[order(most_polluted_hour$hour),]
 
 df <- most_polluted_hour[c('hour','name','NOx concentration')]
 plot(df$hour,df$`NOx concentration`,
-     main = 'NOx mean concentration accross the day (2023)\nTop 10 most polluted neighborhoods',
+     main = 'NOx mean concentration accross the day (2023)',
      xlab='Hour of the day',
      ylab=nox_unit
      )
