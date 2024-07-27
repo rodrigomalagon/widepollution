@@ -2,7 +2,7 @@
 #'
 #' @param df A dataframe
 #' @param old_colnames A **character vector** with the column names  of the data frame **to be changed**.
-#' @param new_col_names A **character vector** with the new column names. Each element should match the corresponding **old name** in the `old_names` parameter.
+#' @param new_colnames A **character vector** with the new column names. Each element should match the corresponding **old name** in the `old_names` parameter.
 #'
 #' @return A dataframe of the same dimensions, with changed column names.
 #' @export
@@ -13,9 +13,10 @@
 #' #
 #' #
 #' #' rename_columns(df,c('b','c'),c('second_column','third_column'))
-rename_columns <- function(df,old_colnames,new_col_names){
+rename_columns <- function(df,old_colnames,new_colnames){
+  stopifnot(is.character(old_colnames),is.character(new_colnames),length(old_colnames) == length(new_colnames))
   for (name in 1:length(old_colnames)){
-    colnames(df)[colnames(df)==old_colnames[name]] <- new_col_names[name]
+    colnames(df)[colnames(df)==old_colnames[name]] <- new_colnames[name]
   }
   return(df)
 }

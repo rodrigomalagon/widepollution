@@ -31,5 +31,5 @@ parallel_unpivot <- function(raw_df,start_pattern1,start_pattern2,new_name1,new_
                             names_pattern = regex_group
   )
   df <- rename_columns(df,c(start_pattern1,start_pattern2),c(new_name1,new_name2))
-  return(df)
+  return(data.frame(df))#Ensuring class consistency with input
 }

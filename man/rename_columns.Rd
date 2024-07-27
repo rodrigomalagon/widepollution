@@ -4,14 +4,14 @@
 \alias{rename_columns}
 \title{Rename the column names of a dataframe without calling any external library}
 \usage{
-rename_columns(df, old_colnames, new_col_names)
+rename_columns(df, old_colnames, new_colnames)
 }
 \arguments{
 \item{df}{A dataframe}
 
 \item{old_colnames}{A \strong{character vector} with the column names  of the data frame \strong{to be changed}.}
 
-\item{new_col_names}{A \strong{character vector} with the new column names. Each element should match the corresponding \strong{old name} in the \code{old_names} parameter.}
+\item{new_colnames}{A \strong{character vector} with the new column names. Each element should match the corresponding \strong{old name} in the \code{old_names} parameter.}
 }
 \value{
 A dataframe of the same dimensions, with changed column names.

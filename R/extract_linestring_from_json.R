@@ -37,6 +37,11 @@
 #'  extract_linestring_from_json_list(3,json_list)
 
 extract_linestring_from_json_list <- function(feature_iterator,json_list){
+  feature_iterator <- as.integer(feature_iterator)
+  stopifnot(
+    feature_iterator >=0,
+    feature_iterator <= length(json_list$features)
+  )
   line_coords <- json_list$features[[feature_iterator]]$geometry$coordinates|>unlist()
   matrix <- matrix(line_coords,ncol = 2,byrow = TRUE)
   sf::st_linestring(matrix)

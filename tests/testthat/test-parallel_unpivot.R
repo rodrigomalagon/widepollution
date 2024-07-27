@@ -1,0 +1,26 @@
+test_that("parallel_unpivot() correctly unpivots two parallel variables in wide format", {
+  expect_equal(
+    parallel_unpivot(data.frame(a=c(1,2),
+                                b=c(3,4),
+                                X1=c(1,1),
+                                Y1=c(10,10),
+                                X2=c(2,2),
+                                Y2=c(20,20),
+                                X30=c(3,3),
+                                Y30=c(30,30)
+                                ),
+                     'X',
+                     'Y',
+                     'X_series',
+                     'Y_series',
+                     'index',
+                     '(X|Y)([[:digit:]]+)'
+                     ),
+    data.frame(a=c(rep(1,3),rep(2,3)),
+               b=c(rep(3,3),rep(4,3)),
+               index=as.character(rep(c(1,2,30),2)),
+               X_series=c(1,2,3),
+               Y_series=c(10,20,30)
+    )
+  )
+})
