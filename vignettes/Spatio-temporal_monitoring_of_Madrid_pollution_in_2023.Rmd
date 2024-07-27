@@ -164,6 +164,7 @@ For simplicity and leveraging the most complete datasets, we will carry on our a
 ```{r}
 #Extract NOx pollution data
 nox_madrid <- year_data[year_data$pollutant_name=='NOx',]
+nox_madrid
 
 #Compute a list of desired values per month (i.e. january = 31, february = 28, etc.)
 desired_vals <- difftime(
@@ -276,6 +277,7 @@ plot(stations$geometry[stations$station_id%in%c(11,35)],col='red',add=TRUE,lwd =
 In this section we perform the data analysis of the previously retrieved, transformed and constructed datasets. To showcase the possibility of our package to store datasets as R objects, we consume the main dataset as data stored inside our package and retrieved by the `package::dataset` call.
 
 ```{r}
+nox_madrid
 nox_madrid <- widepollution::nox_madrid
 ```
 
