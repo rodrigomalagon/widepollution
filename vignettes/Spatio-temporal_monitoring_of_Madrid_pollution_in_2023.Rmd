@@ -42,11 +42,7 @@ The current vignette showcases the employment of processing functions from our p
 In this section we construct our main processed data sources out of data retrieved from [Madrid Open Data portal](https://datos.madrid.es/portal/site/egob). Our source datasets consists of a **wide-format** monthly tables with hours on columns and measuring stations by type of pollutant by day on rows. We store all raw retrieved files for this project as **external data**. 
 
 ## II.0 Comments on `NOTE` arising in `R CMD check`
-We are aware that a `R CMD check` command on this package will give:
-
-1. A **NOTE on extdata folder size bigger than 1MB**. However, as we want to showcase the complete process followed through this project, we include the processing of these bigger raw files in our package. The data selection and customization made for the analysis and discussion subsections is done later on (in *Data inspection* section).
-
-2. A **NOTE on presence of UTF-8 encoded characters**. We deliberately intend to include some non-ASCII characters in the names of places around Madrid, in respect of the data source original language. As this is project is intended as a mock project that could be aimed at an organization, we find it valuable to maintain this support. Furthermore, we make sure the encoding is correctly done through the processing by using `enc2utf8()`.
+We are aware that a `R CMD check` command on this package will give a **NOTE on extdata folder size bigger than 1MB**. However, as we want to showcase the complete process followed through this project, we include the processing of these bigger raw files in our package. The data selection and customization made for the analysis and discussion subsections is done later on (in *Data inspection* section).
 
 ## II.1 Madrid pollution data processing
 
