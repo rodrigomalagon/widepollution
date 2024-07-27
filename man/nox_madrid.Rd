@@ -7,7 +7,7 @@
 \format{
 \subsection{\code{nox_madrid}}{
 
-Simple feature collection with 207096 features and 10 fields
+Simple feature collection with 207096 features and 9 fields
 Geometry type: POINT
 Dimension:     XY
 Bounding box:  xmin: -3.77461 ymin: 40.34715 xmax: -3.580026 ymax: 40.51807
@@ -21,7 +21,6 @@ Geodetic CRS:  WGS 8
 \item{validation}{Measurement validation status}
 \item{measure}{Value measured}
 \item{pollutant_name}{Pollutant name}
-\item{unit}{Unity of measurement}
 \item{station}{Name of sampling station}
 \item{geometry}{Point location of station}
 }
@@ -35,5 +34,6 @@ nox_madrid
 }
 \description{
 A simple feature collection containing NOx data across different sampling stations of Madrid in 2023
+measured in micro grams per cubic meter
 }
 \keyword{datasets}
