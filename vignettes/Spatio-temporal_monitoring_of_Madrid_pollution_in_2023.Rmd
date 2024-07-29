@@ -10,12 +10,13 @@ vignette: >
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  include = FALSE
 )
 ```
 
 ```{r setup}
-library(widepollution)  #call our package
+library(widepollution)  #load our package
 library(dplyr)  #used to arrange dataframe rows
 library(tidyr)  #used to pivot a dataframe to create a summary table
 library(sf)     #used for spatial analysis throughout the markdown
@@ -31,25 +32,25 @@ Author: Rodrigo Malagón Rodríguez
 
 # I. Introduction
 
-Madrid suffers from high trends of pollution due to the strong use of cars and narrow crowded streets. Road traffic can drive as much as 90% of NO2 concentration in the centre of the city (Borge et al., 2014). Similar is the case of PM2.5, mainly caused by heavy car use in the city (Ortiz et al., 2017). Moreover, in previous years, `NO2` concentrations in the city surpassed the annual limit of 40 $\mu g/ m^3$, set by the EU (EEA, 2019).
+Madrid suffers from high trends of pollution due to the strong use of cars and narrow crowded streets. Road traffic can drive as much as 90% of NO2 concentration in the centre of the city (Borge et al., 2014). Similar is the case of PM2.5, mainly caused by heavy car use in the city (Ortiz et al., 2017). Moreover, in previous years, $NO_2$ concentrations in the city surpassed the annual limit of 40 $\mu g/ m^3$, set by the EU (EEA, 2019).
 
-Following this key facts, in this project we investigate which areas are mainly affected by pollution and how does this figure vary across time. To focus our work, we perform the analysis of `NOx` pollution, as argued in further sections. To this end, we perform spatial interpolation of pollution point data across time periods, we create datacubes and perform analyses on this useful structure.
+Following this key facts, in this project we investigate which neighborhoods are mainly affected by pollution and how does this figure vary across time. To focus our work, we perform the analysis of $NO_x$ pollution. We perform spatial interpolation of pollution point data across time periods, we create datacubes and perform analyses on this useful structure.
 
 The current vignette showcases the employment of processing functions from our package to aid in the construction of a useful pollution dataset of Madrid for the year 2023.
 
 # II. Data processing
 
-In this section we construct our main processed data sources out of data retrieved from [Madrid Open Data portal](https://datos.madrid.es/portal/site/egob). Our source datasets consists of a **wide-format** monthly tables with hours on columns and measuring stations by type of pollutant by day on rows. We store all raw retrieved files for this project as **external data**. 
+In this section we process our main datasets from [Madrid Open Data portal](https://datos.madrid.es/portal/site/egob). The main pollution datasets consis of **wide-format** monthly tables with hours on columns and measuring stations by type of pollutant by day on rows. We store all retrieved raw files for this project as **external data**. 
 
-## II.0 Comments on `NOTE` arising in `R CMD check`
-We are aware that a `R CMD check` command on this package will give a **NOTE on extdata folder size bigger than 1MB**. However, as we want to showcase the complete process followed through this project, we include the processing of these bigger raw files in our package. The data selection and customization made for the analysis and discussion subsections is done later on (in *Data inspection* section).
+## II.0 On `NOTE` arising in `R CMD check`
+We are aware that an `R CMD check` command on this package will give a **NOTE on extdata folder size bigger than 1MB**. However, as we want to showcase the complete process followed through this project, we include the processing of these bigger raw files in our package. The data selection and customization made for the analysis and discussion subsections is done in the *Data inspection* section.
 
 ## II.1 Madrid pollution data processing
 
 We begin with a custom arrangement of our data files:
 
 ```{r}
-data_path <- system.file("extdata/Year2023", package="widepollution")
+data_path <- system.file("extdata/Year2023/", package="widepollution")
 file_paths <- list.files(data_path, full.names = TRUE, pattern = "*.csv")
 
 #We extract a list of months ordered as the files are
@@ -62,14 +63,15 @@ months <- lapply(file_names,function(str){
 files <- data.frame(path=file_paths, month=months)
 months_order <- c('ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic')
 files <- arrange(files,factor(files$month,levels = months_order))
-head(files,2)
+head(files,5)
 ```
 
-We iterate data extraction and an unpivot process through all the monthly files. Then we construct a single long-format dataframe. We perform processing of data to ensure appropriate data types and set a useful dataframe structure for further analyses.
+We iterate data extraction and an unpivot process through all the monthly files. Then we construct a single long-format dataframe. We perform processing to ensure appropriate data types and set a useful dataframe structure for further analyses.
 
 ```{r}
 monthly_data <- list()
 
+#Extraction and unpivot
 for (month in 1:12){
   month_path <- files$path[month]
   df <- read.csv(month_path,sep=';',fileEncoding = "UTF-8")
@@ -98,13 +100,11 @@ year_data <- year_data[c('station_id','pollutant_id','month','day','hour','valid
 #Convert V-F values to booleans for the validation column
 year_data$validation <- lapply(year_data$validation, function(x){x=='V'})|>unlist()
 
-#Extract a single day-of-year value as date
-#year_data$date <- as.Date(paste0('2023-',year_data$month,'-',year_data$day))
 
 head(year_data)
 ```
 
-We incorporate the name of the pollutants from a metadata file containing descriptive information about them.
+We incorporate pollutants metadata with descriptive information.
 
 ```{r}
 pollutants <- system.file('extdata/pollutants.csv',package = 'widepollution')|> read.csv(sep=',')
@@ -124,7 +124,7 @@ head(year_data)
 
 ### Dataset inspection
 
-We can now get a glance of the proportion of "verified" samples from the whole dataset, following the metadata description available on the open portal:
+We can now get a glance of the proportion of "verified" samples from the dataset, following the metadata description available on the portal:
 
 ```{r}
 verified <- sum(year_data$validation)
@@ -132,14 +132,14 @@ total <- dim(year_data)[1]
 paste0(round(verified/total * 100,2),' %')
 ```
 
-We also verify that no `NULL` values are provided in the dataset:
+We verify that no `NULL` values are provided in the dataset:
 
 ```{r}
 paste0('Number of NULL measures found: ',
        sum(unlist(lapply(year_data$measure,is.null))))
 ```
 
-We now inspect the proportion of data by type of pollutant and compare it with the desired number of data measurements, namely `number of stations`$\times\ 365$ days of the year $\times\ 24$ hours of the day.
+We now inspect the proportion of data by type of pollutant and compare it with the desired number of data measurements, namely `number of stations`$\times\ 365$ `days of the year` $\times\ 24$ `hours of the day`.
 
 ```{r}
 pollutant_summary <- aggregate(measure~pollutant_name,data= year_data,length)|>
@@ -153,14 +153,13 @@ pollutant_summary$percentage_of_completeness <- pollutant_summary$num_of_measure
 pollutant_summary
 ```
 
-Though no `NULL` values were found in the dataset, it seems that most pollutants lack data through time and across the sensor network. This is why the interpolation methods are leveraged to account for missing data around a particular sensor in a given time.
+Though no `NULL` values were found in the dataset, it seems that **most pollutants lack data** through time and across the sensor network. This is why the interpolation methods are leveraged to **account for missing data** around a particular sensor in a given time.
 
-For simplicity and leveraging the most complete datasets, we will carry on our analysis with the NOx data subset. Thus, we continue to inspect in more detail data from this particular pollutant. We should have, by station-month combination, a total of measurements equal to the number of days of that month $\times\ 24$ hours of the day. We know, by the wide structure of our initial dataset with 24 measurements per day-pollutant-station combination, that missing hours will not be the case, so we perform the inspection at the "day level" (division by $24$):
+For simplicity and leveraging the most complete dataset, we will do our analysis with the $NO_x$. We thus inspect in more detail data from this pollutant. We should have, by station-month combination, a total of measurements equal to the `number of days of that month` $\times\ 24$ `hours of the day`. We know, by the wide structure of our initial dataset, that missing hours will not be the case, so we perform the inspection at the "day level" (division by $24$):
 
 ```{r}
 #Extract NOx pollution data
 nox_madrid <- year_data[year_data$pollutant_name=='NOx',]
-nox_madrid
 
 #Compute a list of desired values per month (i.e. january = 31, february = 28, etc.)
 desired_vals <- difftime(
@@ -180,11 +179,11 @@ nox_count_summary[cols] <- lapply(nox_count_summary[cols],function(x){x-desired_
 nox_count_summary
 ```
 
-Inspecting this summary dataframe, we conclude that (for this NOx dataset) most stations possess complete records per month and, most important, missing dates spatially concentrate in few stations. Therefore, as the rest of sensor have measurements for those time slots, we can get proxy readings for those locations by interpolation methods. With this in mind, we carry on with our workflow and coment that, after this inspection, the `NOx` dataset is to be stored as data in our package for later use.
+Inspecting this summary dataframe, we conclude that most stations possess complete $NO_x$ records per month and, most important, missing dates spatially concentrate in few stations. Therefore, we can get proxy readings for those locations by interpolation. With this in mind, the $NO_x$ dataset has been stored as data in our package for later use.
 
 ## II.2 Integration of stations locations
 
-We continue by loading the stations data and locations (point geometries), defining the column `station_id` to perform the dataframes join when needed in the further workflow.
+We now load the stations data and locations (point geometries), defining the column `station_id` to perform the dataframes join when needed.
 
 ```{r}
 #Read stations csv
@@ -192,12 +191,10 @@ file_path <- system.file('extdata/stations.csv',package = 'widepollution')
 stations <- read.csv(file_path,sep=';',fileEncoding = "UTF-8")
 
 #Translate and align column names
-stations <- rename_columns(stations,
-                           c('CODIGO_CORTO','ESTACION','LONGITUD','LATITUD'),
-                           c('station_id','station_name','long','lat'))
+stations <- rename_columns(stations,c('CODIGO_CORTO','ESTACION','LONGITUD','LATITUD'),c('station_id','station_name','long','lat'))
 stations <- stations[c('station_id','station_name','long','lat')]
 
-#Ensuring ASCII characters for names
+#Ensuring ASCII characters for names (key step to avoid warnings/notes on package)
 stations$station_name|>iconv(,to='ASCII//TRANSLIT') -> stations$station_name
 
 #Set georeference
@@ -206,7 +203,7 @@ stations <- st_as_sf(stations,coords=c('long','lat'),crs=stations_crs)
 stations
 ```
 
-We then join the dataframes and inspect the size of our complete yearly `NOx` dataset (in MBs).
+We then join the dataframes and inspect the size of the dataset (in MBs).
 
 ```{r}
 #Data join
@@ -222,7 +219,7 @@ nox_madrid <- merge(nox_madrid,stations,by='station_id')|>
 
 ## II.3 Neighborhoods data processing
 
-To complement the previous processing and exhibit the handling of another data type (namely, a JSON file) the following steps integrate the Madrid neighborhoods to our workflow to provide more spatial context to the pollution data and extract valuable insights per neighborhood. We stress that the original dataset provides the neighborhoods' border linestring coordinates given in the `ETRS89` CRS, which has `meters` as units. This will be suitable in the furthcoming analyses. However, for consistency with the pollution dataset, here we reproject (for now) to `WGS84`.
+To cexhibit the handling of another data type (JSON file) the following steps integrate the Madrid neighborhoods to our workflow to provide more spatial context and extract valuable insights per neighborhood. The original dataset provides the neighborhoods' border linestring coordinates given in the `ETRS89` CRS, which has `meters` as units. This will be suitable in the furthcoming analyses. However, for consistency with the pollution dataset, now we reproject to `WGS84`.
 
 ```{r}
 #Extraction of data from json file
@@ -250,7 +247,7 @@ neighborhoods <- rename_columns(neighborhoods,c('NOMBRE','NOMDIS'),c('name','dis
 neighborhoods <- neighborhoods[c('FID','name','district')]
 ```
 
-First rendering of a plot for contextual and consistency verification of datasets:
+First rendering of a plot for contextual and consistency verification:
 
 ```{r}
 #Plot of pollution stations and neighborhoods
@@ -259,7 +256,7 @@ plot(neighborhoods$geometry,graticule=TRUE,col_graticule='gray',lwd = 0.1,col='l
 plot(stations$geometry,lwd=2,col='orange',add=TRUE)
 ```
 
-Moreover, we also make sure that the most persistently missing data (in stations with `station_id` 11 and 35, as shown in the `Dataset inspection` section) is enclosed by nearby sensors:
+Moreover, we make sure that the most persistently missing data (in stations with `station_id` 11 and 35, shown in the `Dataset inspection` section) is enclosed by nearby sensors:
 
 ```{r}
 par(mar = c(2,2,0.5,0.5), mgp = c(0, 1, 0))
@@ -270,7 +267,7 @@ plot(stations$geometry[stations$station_id%in%c(11,35)],col='red',add=TRUE,lwd =
 
 # III. Analysis
 
-In this section we perform the data analysis of the previously retrieved, transformed and constructed datasets. To showcase the possibility of our package to store datasets as R objects, we consume the main dataset as data stored inside our package and retrieved by the `package::dataset` call.
+In this section we perform the data analysis of the previously retrieved, transformed and constructed datasets. To showcase the possibility of our package to store datasets as R objects, we consume the $NO_x$ dataset by the `package::dataset` call:
 
 ```{r}
 nox_madrid <- widepollution::nox_madrid
@@ -278,7 +275,7 @@ nox_madrid <- widepollution::nox_madrid
 
 ## III.1 Monthly data analysis
 
-We continue performing data aggregation of our `NOx` dataset at the month level and perform interpolation through `Inverse Distsance Interpolation` per month.
+We execute data aggregation at the month level and perform interpolation through `Inverse Distsance Interpolation` per month.
 
 ```{r}
 #Month-station data aggregation with mean values
@@ -292,7 +289,7 @@ neighborhoods$geometry |>
   st_union() |> st_transform(crs=neighborhoods_crs) -> madrid
 
 grid <- madrid |> st_bbox() |>
-  st_as_stars(dx=100) |> #100m resolution to ease computations
+  st_as_stars(dx=100) |> #100m resolution to ease calculations
   st_crop(madrid)
 
 #Perform interpolation per month and construct a stars data cube
@@ -313,7 +310,7 @@ nox_mad_monthly_cube
 
 ### Neighborhoods discussion
 
-We now take advantage of the `stars` object created to perform an analysis per neighborhood that can be useful for the authorities, in order to identify risk at that level. Explicitly, we compute the mean concentration of `NOx` per neighborhood throughout the year.
+We now take advantage of the `stars` object created to perform an analysis per neighborhood that can be useful for the authorities, in order to identify risk at that level. Explicitly, we compute the mean concentration of $NO_x$ per neighborhood throughout the year.
 
 ```{r}
 aggregator <- st_transform(neighborhoods$geometry,crs=neighborhoods_crs)
@@ -322,24 +319,25 @@ names(nox_neigh_month) <- 'mean NOx concentration'
 nox_neigh_month
 ```
 
-We can, for instance, inspect the evolution of concentration of `NOx` in the first half of the year by performing an adequate (vector) data cube subsetting:
+We inspect the evolution of concentration of $NO_x$ in the first half of the year by performing an adequate (vector) data cube subsetting:
 
 ```{r}
-nox_neigh_month[,,1:6] |> plot()
+nox_neigh_month[,,1:6] |> plot(breaks='jenks')
 ```
 
-We readily verify that the beginning of the year suffered of most critical levels of `NOx` pollution and that this pollutant tends to concentrate in the center to center-south corridor of the city, verifying what was commented in the `Introduction`. Morevoer, we can obtain time statistics per neighborhood, such as a broad year summary figure (mean value) of the `NOx` concentration:
+We readily verify that the beginning of the year suffered of most critical levels of $NO_x$ pollution and that this pollutant tends to concentrate in the center to center-south corridor of the city, verifying what was commented in the `Introduction`. Morevoer, we can obtain time statistics per neighborhood, such as a broad yearly figure (mean value) of the $NO_x$ concentration:
 
 ```{r}
+#Summarize by geometry
 st_apply(nox_neigh_month,c('geometry'),mean) |> as.data.frame() |> st_sf() -> nox_mad_mean_year
 
+#Retrieving names of neighborhoods
 nox_mad_mean_year$FID <- 1:131
-
 nox_mad_mean_year <- merge(nox_mad_mean_year,
       st_drop_geometry(neighborhoods[c('FID','name')]),
       by='FID')
 
-plot(nox_mad_mean_year['mean'],main = 'Mean NOx concentration in Madrid (2023)')
+plot(nox_mad_mean_year['mean'],main = 'Mean NOx concentration in Madrid (2023)',breaks='jenks')
 ```
 
 We could recover the neighborhoods names by the id, as the aggregation step was done following the order of the `neighborhoods` sf object. Then, we can obtain the 10 most polluted neighborhoods by name and plot them as well:
@@ -353,13 +351,13 @@ most_polluted$name
 #Plot the most polluted neighborhoods with greater mean concentration of NOx through 2023
 neighborhoods$geometry|>st_transform(crs=neighborhoods_crs)|>
   plot(border=0,col='lightblue',graticule=TRUE,axes=TRUE)
-most_polluted$geometry |>
-  plot(col='red',add=TRUE)
+most_polluted$geometry |> st_union() |> st_buffer(1) |>#mini buffer to clean unprecise union
+  plot(lwd = 2,border ='red', alpha = 0,add=TRUE)
 ```
 
 ## III.2 Hour data analysis
 
-Now we perform a similar analysis, this time first aggregating the numeric data into hour-of-the-day slots across the year 2023:
+Now we perform a similar analysis, this time first aggregating the pollution data into hour-of-the-day slots across the year:
 
 ```{r}
 #Hour of day-station data aggregation with mean values
@@ -386,7 +384,7 @@ nox_mad_hour_cube
 
 ### Neighborhoods discussion
 
-Similar to the previous case, we obtain the hour-of-the-day `NOx` concentration figure by neighborhood for further discussion.
+We obtain the hour-of-the-day $NO_x$ concentration figure by neighborhood for further discussion.
 
 ```{r}
 aggregator <- st_transform(neighborhoods$geometry,crs=neighborhoods_crs)
@@ -395,15 +393,15 @@ names(nox_neigh_hour) <- 'mean NOx concentration'
 nox_neigh_hour
 ```
 
-We can finally inspect the evolution of concentration of `NOx` along, for instance, an even afternoon of 2023 (from 13 to 20 hrs.) in the metropolitan area of Madrid:
+We inspect the evolution of concentration of $NO_x$ along, for instance, an even afternoon of 2023 (from 13 to 20 hrs.) in the metropolitan area of Madrid:
 
 ```{r}
-nox_neigh_hour[,,13:20] |> plot()
+nox_neigh_hour[,,13:20] |> plot(breaks='jenks')
 ```
 
-We clearly identify the rush hour pollution rise after 19:00 (when vehicles are heavily used). It represents a peak time slot where major concentration around the city can be found and, in this case, increasingly more towards the outskirts of the city. Interestingly, We can readily verify how two nuclei at the south and north of the city center start to build up as the afternoon passes, until an overall high level (over 50 $\mu g$ of `NOx` concentration) is registered around the center after 20:00.
+We clearly identify the rush hour pollution rise after 19:00 (when vehicles are heavily used). It represents a peak time slot where major concentration around the city can be found and, in this case, the patterns builds up increasingly towards the outskirts of the city. It is interesting to identify two nuclei at the south and north of the city center building up as the afternoon passes, until an overall high level (over 50 $\mu g/m^3$ of $NO_x$ concentration) is registered around the center after 20:00.
 
-It is also interesting to notice that, as expected, during working hours the major concentration develops at the center of the city. Moreover, we can identify a great dispersion of `NOx` concentration values during the peak hours in the following graph:
+It is also interesting to notice that during working hours the major concentration develops at the center of the city. Moreover, we can identify a great dispersion of $NO_x$ concentration values during the peak hours in the following graph:
 
 ```{r}
 nox_neigh_hour |> as.data.frame() |> st_drop_geometry() |> rename_columns(c('mean.NOx.concentration'),c('NOx concentration')) -> nox_neigh_hour_df
@@ -423,7 +421,7 @@ plot(df$hour,df$`NOx concentration`,
      )
 ```
 
-We now take a closer look to the time series of the 10 overall most polluted neighborhoods. We verify that these neighborhoods show `NOx` concentration values that are similar to those of the upper part of the value intervals of the previous graph during the peak hours (around 9:00 and after 19:00):
+We now take a closer look to the time series of the 10 overall most polluted neighborhoods. We verify that these neighborhoods show $NO_x$ concentration values (~80 $\mu g/m^3$) similar to those of the upper part of the value intervals of the previous graph during the peak hours (around 9:00 and after 19:00):
 
 ```{r}
 most_polluted_hour <- nox_neigh_hour_df[nox_neigh_hour_df$name %in% most_polluted$name,]
@@ -438,7 +436,7 @@ plot(df$hour,df$`NOx concentration`,
      )
 ```
 
-Therefore, we notice that these 10 polluted neighborhoods not only show a strong `NOx` concentration as a whole during 2023 (yearly mean value), but also show tougher increases around the rush hours. Explicitly, for these 10 neighborhoods located in the centre-south of the city, the average `NOx` concentration from 19:00 to 21:00 is:
+Therefore, we conclude that these 10 polluted neighborhoods not only show a strong overall $NO_x$ concentration during 2023, but also show tougher increases around the rush hours. Explicitly, for these 10 neighborhoods located in the centre-south of the city, the average $NO_x$ concentration from 19:00 to 21:00 is:
 
 ```{r}
 val <- mean(most_polluted_hour[most_polluted_hour$hour%in%19:21,]$`NOx concentration`) |> round(2)
