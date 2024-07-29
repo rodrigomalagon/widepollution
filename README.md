@@ -15,8 +15,8 @@ datasets found in Madrid Open Data portal.
 
 ## Installation
 
-You can install the development version of `regexcite` from
-[GitHub](https://github.com/) with:
+You can install the development version of `widepollution` from
+[GitHub](https://github.com/rodrigomalagon/widepollution) with:
 
 ``` r
 # install.packages("devtools")
