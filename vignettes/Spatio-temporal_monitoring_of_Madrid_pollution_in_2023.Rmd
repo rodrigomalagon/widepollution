@@ -49,7 +49,7 @@ We are aware that an `R CMD check` command on this package will give a **NOTE on
 We begin with a custom arrangement of our data files:
 
 ```{r}
-data_path <- system.file("extdata/Year2023/", package="widepollution")
+data_path <- system.file("extdata/year2023/", package="widepollution")
 file_paths <- list.files(data_path, full.names = TRUE, pattern = "*.csv")
 
 #We extract a list of months ordered as the files are
